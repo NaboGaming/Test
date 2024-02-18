@@ -27,12 +27,13 @@
   <p>Email: <span id="userEmail"></span></p>
   <img id="userProfilePicture" src="" alt="Profile Picture">
    <div>
-    <button id="squad1">Join Squad 1</button>
-    <button id="squad2">Join Squad 2</button>
-    <button id="squad3">Join Squad 3</button>
-    <button id="squad4">Join Squad 4</button>
-  </div>
-  <div id="customPopup" style="display: none;"></div>
+  <p>Click the links below to join a squad:</p>
+  <a href="#" id="squad1">Join Squad 1</a>
+  <a href="#" id="squad2">Join Squad 2</a>
+  <a href="#" id="squad3">Join Squad 3</a>
+  <a href="#" id="squad4">Join Squad 4</a>
+</div>
+<div id="customPopup" style="display: none;"></div>
 <script defer type="module">
  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
