@@ -4,42 +4,93 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Squad Joining</title>
-
+  <style>
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px solid #000;
+      padding: 16px;
+      background: #fff;
+      z-index: 1;
+    }
+    .close {
+      float: right;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <h1>Welcome, <span id="userName"></span></h1>
   <p>Email: <span id="userEmail"></span></p>
   <img id="userProfilePicture" src="" alt="Profile Picture">
-<script defer type="module">
- import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
-import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+  <script defer type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
-  authDomain: "register-71bde.firebaseapp.com",
-  databaseURL: "https://register-71bde.firebaseio.com",
-  projectId: "register-71bde",
-  storageBucket: "register-71bde.appspot.com",
-  messagingSenderId: "412548441298",
-  appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
+      authDomain: "register-71bde.firebaseapp.com",
+      projectId: "register-71bde",
+      storageBucket: "register-71bde.appspot.com",
+      messagingSenderId: "412548441298",
+      appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        updateUserProfile(user);
+      } else {
+        // User is signed out.
+        // ...
+      }
+    });
 
-function updateUserProfile(user) {
-  const userName = user.displayName;
-  const userEmail = user.email;
-  const userProfilePicture = user.photoURL;
-  document.getElementById("userName").textContent = userName;
-  document.getElementById("userEmail").textContent = userEmail;
-  document.getElementById("userProfilePicture").src = userProfilePicture;
-}
+    function updateUserProfile(user) {
+      const userName = user.displayName;
+      const userEmail = user.email;
+      const userProfilePicture = user.photoURL;
+      document.getElementById("userName").textContent = userName;
+      document.getElementById("userEmail").textContent = userEmail;
+      document.getElementById("userProfilePicture").src = userProfilePicture;
+    }
 
+    function joinSquad(user, squadNumber) {
+      const squadRef = doc(collection(db, "squads"), `squad${squadNumber}`);
+      getDoc(squadRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const squadData = snapshot.data();
+          if (!squadData.members || Object.keys(squadData.members).length < 4) {
+            return updateDoc(squadRef, {
+              members: {
+                [user.uid]: true
+              }
+            })
+            .then(() => {
+              displayPopup('You have successfully joined the squad!');
+            })
+            .catch((error) => {
+              displayPopup('An error occurred while joining the squad: ' + error.message);
+            });
+          } else {
+            displayPopup('Squad is full or you are already in this squad!');
+          }
+        } else {
+          displayPopup('Squad does not exist');
+        }
+      });
+    }
 
-</script>
+    function displayPopup(message) {
+      // Implement popup display logic here
+    }
+  </script>
 </body>
 </html>
