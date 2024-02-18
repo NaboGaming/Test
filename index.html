@@ -91,12 +91,22 @@ function joinSquad(user, squadNumber) {
     const squadData = snapshot.val();
     if (!squadData.members) {
       // Squad is empty, the user can join
-      update(ref(db, `squads/squad${squadNumber}`), { members: { [user.uid]: true } });
-      displayPopup('You have successfully joined the squad!');
+      set(ref(db, `squads/squad${squadNumber}/members/${user.uid}`), true)
+        .then(() => {
+          displayPopup('You have successfully joined the squad!');
+        })
+        .catch((error) => {
+          displayPopup('An error occurred while joining the squad: ' + error.message);
+        });
     } else if (Object.keys(squadData.members).length < 4 && !squadData.members[user.uid]) {
       // Squad has less than 4 members and user is not already in the squad, allow joining
-      update(ref(db, `squads/squad${squadNumber}/members`), { [user.uid]: true });
-      displayPopup('You have successfully joined the squad!');
+      set(ref(db, `squads/squad${squadNumber}/members/${user.uid}`), true)
+        .then(() => {
+          displayPopup('You have successfully joined the squad!');
+        })
+        .catch((error) => {
+          displayPopup('An error occurred while joining the squad: ' + error.message);
+        });
     } else {
       displayPopup('Squad is full or you are already in this squad!');
     }
