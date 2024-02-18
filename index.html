@@ -36,23 +36,24 @@
     <span class="close" onclick="closePopup()">&times;</span>
     <p>Thank you for joining a squad!</p>
   </div>
-  <script defer type="module">import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+<script defer type="module">
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
-import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
+import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
-    authDomain: "register-71bde.firebaseapp.com",
-    projectId: "register-71bde",
-    storageBucket: "register-71bde.appspot.com",
-    messagingSenderId: "412548441298",
-    appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
+  authDomain: "register-71bde.firebaseapp.com",
+  databaseURL: "https://register-71bde.firebaseio.com",
+  projectId: "register-71bde",
+  storageBucket: "register-71bde.appspot.com",
+  messagingSenderId: "412548441298",
+  appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = getDatabase();
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -86,26 +87,23 @@ function closePopup() {
   popup.style.display = "none";
 }
 
-async function joinSquad(user, squadNumber) {
-  const userDocRef = doc(db, "squads", `squad${squadNumber}`);
-  const userDoc = await userDocRef.get();
-  const squadData = userDoc.data();
-
-  if (!squadData.members) {
-    // Squad is empty, the user can join
-    await updateDoc(userDocRef, {
-      members: [user.uid]
-    });
-    displayPopup('You have successfully joined the squad!');
-  } else if (squadData.members.length < 4 && !squadData.members.includes(user.uid)) {
-    // Squad has less than 4 members and user is not already in the squad, allow joining
-    await updateDoc(userDocRef, {
-      members: [...squadData.members, user.uid]
-    });
-    displayPopup('You have successfully joined the squad!');
-  } else {
-    displayPopup('Squad is full or you are already in this squad!');
-  }
-}</script>
+function joinSquad(user, squadNumber) {
+  const squadRef = ref(db, `squads/squad${squadNumber}`);
+  get(squadRef).then((snapshot) => {
+    const squadData = snapshot.val();
+    if (!squadData.members) {
+      // Squad is empty, the user can join
+      update(ref(db, `squads/squad${squadNumber}`), { members: { [user.uid]: true } });
+      displayPopup('You have successfully joined the squad!');
+    } else if (Object.keys(squadData.members).length < 4 && !squadData.members[user.uid]) {
+      // Squad has less than 4 members and user is not already in the squad, allow joining
+      update(ref(db, `squads/squad${squadNumber}/members`), { [user.uid]: true });
+      displayPopup('You have successfully joined the squad!');
+    } else {
+      displayPopup('Squad is full or you are already in this squad!');
+    }
+  });
+}
+</script>
 </body>
 </html>
