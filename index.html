@@ -12,31 +12,43 @@
   <img id="userProfilePicture" src="" alt="Profile Picture">
   <script defer type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
-      authDomain: "register-71bde.firebaseapp.com",
-      projectId: "register-71bde",
-      storageBucket: "register-71bde.appspot.com",
-      messagingSenderId: "412548441298",
-      appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
+  authDomain: "register-71bde.firebaseapp.com",
+  projectId: "register-71bde",
+  storageBucket: "register-71bde.appspot.com",
+  messagingSenderId: "412548441298",
+  appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        updateUserProfile(user);
-      } else {
-        // User is signed out.
-        // ...
-      }
-    });
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    updateUserProfile(user);
+  } else {
+    // User is signed out.
+    // ...
+  }
+});
 
+function updateUserProfile(user) {
+  const userCollection = collection(db, "users");
+  const userData = {
+    name: user.displayName,
+    email: user.email,
+    profilePicture: user.photoURL
+  };
 
+  // Add a new document with a generated ID to the "users" collection.
+  const docRef = addDoc(userCollection, userData);
+  // You can use the docRef to get the ID of the added document if needed.
+}
   </script>
 </body>
 </html>
