@@ -1,99 +1,114 @@
 <!DOCTYPE html>
-<html>
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta id="theme-check" name="theme-color" content="red">
+<html lang="en">
+
 <head>
-    <style>
-        body{
-            margin:0;
-            padding:0;
-            background: white;
-        }
-        #messages{
-            position: fixed;
-            left:0;
-            top:0;
-            width:100%;
-            height:calc( 100% - 50px );
-            background: white;
-            overflow-y:auto;
-            padding:10px;
-            box-sizing: border-box;
-        }
-        #sendMsg{position: fixed;left:0;bottom:0;width: 100%;height:50px;background:#AAA;}#msgTxt{position: absolute;left:0;top:0;width:calc(100% - 100px);height:100%;padding-left:10px;box-sizing: border-box;}#msgBtn{position: absolute;right:0;top:0;width: 100px;height:100%;}.outer{width:100%;margin-top:10px;display:flex;}#inner{padding:10px;box-sizing: border-box;border-radius:10px;}.me{background:black;color:#fff;float: right; margin-left: 60%;}.notMe{background: pink;color:#000;}
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad Formation</title>
 </head>
 
 <body>
-    <div id="messages"></div>
-
-    <div id="sendMsg">
-        <input type="text" id="msgTxt" placeholder="ENTER YOUR MSG...">
-        <input type="submit" id="msgBtn" value="send" onclick="module.sendMsg()">
+    <h1>Squad Formation Page</h1>
+    <div id="squadFormation">
+        <input type="text" id="userName" placeholder="Your Name"><br>
+        <button onclick="joinSquad()">Join Squad</button>
     </div>
 
-    <script>
-        module = {};
-    </script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, remove, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <div id="customPopup" style="display: none;">
+        <h2>Joined Squad Members</h2>
+        <ul id="squadMembers"></ul>
+        <button onclick="closePopup()">Close</button>
+    </div>
 
-        const firebaseConfig = {
-                 apiKey: "AIzaSyB97_PQzaTAEb6dGHeW-qKQJtETU-fJ064",
-      authDomain: "chatikidijitari.firebaseapp.com",
-      databaseURL: "https://chatikidijitari-default-rtdb.firebaseio.com",
-      projectId: "chatikidijitari",
-      storageBucket: "chatikidijitari.appspot.com",
-      messagingSenderId: "717579176975",
-      appId: "1:717579176975:web:7d7e71fbe80a1b680c277a"
-        };
+    <script defer type="module">import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+const firebaseConfig = {
+    apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
+    authDomain: "register-71bde.firebaseapp.com",
+    projectId: "register-71bde",
+    storageBucket: "register-71bde.appspot.com",
+    messagingSenderId: "412548441298",
+    appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
+};
 
-        // variables
-        var msgTxt = document.getElementById('msgTxt');
-        var sender;
-        if(sessionStorage.getItem('sender')){
-            sender = sessionStorage.getItem('sender');
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+onAuthStateChanged(getAuth(app), (user) => {
+    if (user) {
+        setupSquadFormation(user);
+    } else {
+        displayPopup();
+    }
+});
+
+function joinSquad() {
+    const userName = document.getElementById('userName').value;
+    const squadRef = collection(db, 'squads');
+
+    // Check if user already joined a squad
+    const query = collection(db, 'squads').where('members', 'array-contains', userName);
+    onSnapshot(query, (snapshot) => {
+        if (snapshot.size > 0) {
+            alert('You have already joined a squad!');
         } else {
-            sender = prompt('PLEASE ENTER YOUR NAME');
-            sessionStorage.setItem('sender',sender);
+            squadRef.get().then((querySnapshot) => {
+                if (querySnapshot.size > 0) {
+                    const squad = querySnapshot.docs[0];
+                    const squadMembers = squad.data().members;
+                    if (squadMembers.length < 4) {
+                        squadMembers.push(userName);
+                        setDoc(doc(db, 'squads', squad.id), { members: squadMembers }, { merge: true });
+                    } else {
+                        alert('Squad is full. Please join another squad.');
+                    }
+                } else {
+                    setDoc(doc(db, 'squads', 'squad1'), { members: [userName] });
+                }
+            }).catch((error) => {
+                console.error('Error joining squad: ', error);
+            });
         }
+    });
+}
 
-        // TO SEND MESSAGES
-        module.sendMsg = function sendMsg(){
-            var msg = msgTxt.value;
-            var timestamp = new Date().getTime();
-            set(ref(db,"messages/"+timestamp),{
-                msg : msg,
-                sender : sender
-            })
+function setupSquadFormation(user) {
+    // Function to display user's information
+    const updateUserProfile = (user) => {
+        const userName = user.displayName;
+        const userEmail = user.email;
+        const userProfilePicture = user.photoURL;
+        document.getElementById("userName").textContent = userName;
+        document.getElementById("userEmail").textContent = userEmail;
+        document.getElementById("userProfilePicture").src = userProfilePicture;
+    };
 
-            msgTxt.value="";
+    updateUserProfile(user);
+
+    const squadRef = collection(db, 'squads');
+    const query = collection(db, 'squads');
+    onSnapshot(query, (snapshot) => {
+        if (!snapshot.empty) {
+            let squadMembersList = '';
+            snapshot.forEach((doc) => {
+                squadMembersList += `<li>${doc.data().members.join(', ')}</li>`;
+            });
+            document.getElementById('squadMembers').innerHTML = squadMembersList;
         }
+    });
+}
 
-        // TO RECEIVE MSG
-        onChildAdded(ref(db,"messages"), (data)=>{
-            if(data.val().sender == sender){
-                messages.innerHTML += "<div style=justify-content:end class=outer id="+data.key+"><div id=inner class=me>you : "+data.val().msg+"<button id=dltMsg onclick=module.dltMsg("+data.key+")>DELETE</button></div></div>";
-            } else {
-                messages.innerHTML += "<div class=outer id="+data.key+"><div id=inner class=notMe>"+data.val().sender+" : "+data.val().msg+"</div></div>";
-            }
-        })
+function displayPopup() {
+    const popup = document.getElementById('customPopup');
+    popup.style.display = "block";
+}
 
-        // TO DELETE MSG
-        module.dltMsg = function dltMsg(key){
-            remove(ref(db,"messages/"+key));
-        }
-
-        // WHEN MSG IS DELETED
-        onChildRemoved(ref(db,"messages"),(data)=>{
-            var msgBox = document.getElementById(data.key);
-            messages.removeChild(msgBox);
-        })
-    </script>
+function closePopup() {
+    const popup = document.getElementById('customPopup');
+    popup.style.display = "none";
+}</script>
 </body>
 
 </html>
