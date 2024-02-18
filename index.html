@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,25 +9,26 @@
   <h1>Welcome to your Dashboard, <span id="userName"></span></h1>
   <p>Email: <span id="userEmail"></span></p>
   <img id="userProfilePicture" src="" alt="Profile Picture">
-  <p>Select your Squad: 
+  <p>Select your Squad:
     <select id="squadSelect">
+      <option value="">Select Squad</option>
       <option value="squad1">Squad 1</option>
       <option value="squad2">Squad 2</option>
       <option value="squad3">Squad 3</option>
       <option value="squad4">Squad 4</option>
       <option value="squad5">Squad 5</option>
     </select>
+    <button id="submitSquadBtn">Submit</button>
   </p>
 
   <script defer type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
     const firebaseConfig = {
       // Your Firebase config goes here
-      apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
+apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
       authDomain: "register-71bde.firebaseapp.com",
       projectId: "register-71bde",
       storageBucket: "register-71bde.appspot.com",
@@ -38,32 +38,27 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
     const realtimeDb = getDatabase(app);
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        document.getElementById("userName").textContent = user.displayName;
+        document.getElementById("userEmail").textContent = user.email;
+        document.getElementById("userProfilePicture").src = user.photoURL;
 
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          document.getElementById("userName").textContent = user.displayName;
-          document.getElementById("userEmail").textContent = user.email;
-          document.getElementById("userProfilePicture").src = user.photoURL;
-          const squadSelect = document.getElementById("squadSelect");
+        const squadSelect = document.getElementById("squadSelect");
+        const submitSquadBtn = document.getElementById("submitSquadBtn");
 
-          squadSelect.addEventListener('change', (event) => {
-            const selectedSquad = event.target.value;
+        submitSquadBtn.addEventListener('click', () => {
+          const selectedSquad = squadSelect.value;
+          if (selectedSquad) {
             // Store the user's selected squad in the Realtime Database
             set(ref(realtimeDb, `userSquads/${user.uid}`), selectedSquad);
-
-            // You can also update the Firestore user document with the selected squad if needed
-            setDoc(userDocRef, { squad: selectedSquad }, { merge: true });
-          });
-        } else {
-          console.log("User document does not exist");
-        }
+            alert("Squad selection submitted successfully!");
+          } else {
+            alert("Please select a squad before submitting");
+          }
+        });
       } else {
         // User is signed out. Display appropriate message or redirect to login page
       }
