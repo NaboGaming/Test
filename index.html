@@ -24,6 +24,12 @@
         <button id="submitSquadBtn">Submit</button>
     </p>
 
+<div>
+    Squad 1 Count: <span id="squad1Count">0</span>
+</div>
+<div>
+    Squad 2 Count: <span id="squad2Count">0</span>
+</div>
     <script defer type="module">
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
@@ -38,41 +44,63 @@ apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",
               };const app = initializeApp(firebaseConfig);const auth = getAuth(app);const realtimeDb = getDatabase(app);
 
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                document.getElementById("userName").textContent = user.displayName;
-                document.getElementById("userEmail").textContent = user.email;
-                document.getElementById("userProfilePicture").src = user.photoURL;
+    if (user) {
+        document.getElementById("userName").textContent = user.displayName;
+        document.getElementById("userEmail").textContent = user.email;
+        document.getElementById("userProfilePicture").src = user.photoURL;
 
-                const squadSelect = document.getElementById("squadSelect");
-                const submitSquadBtn = document.getElementById("submitSquadBtn");
-                const gameNameInput = document.getElementById("gameNameInput");
+        const squadSelect = document.getElementById("squadSelect");
+        const submitSquadBtn = document.getElementById("submitSquadBtn");
+        const gameNameInput = document.getElementById("gameNameInput");
+        const squadsRef = ref(realtimeDb, 'squads');
+        function updateSquadCounts(squadsData) {
+    for (const squad in squadsData) {
+        const squadCount = squadsData[squad].members ? Object.keys(squadsData[squad].members).length : 0;
+        document.getElementById(squad + "Count").textContent = squadCount;
+    }
+}
 
-                submitSquadBtn.addEventListener('click', async () => {
-                    const selectedSquad = squadSelect.value;
-                    const gameName = gameNameInput.value;
+// Listen for changes in the "squads" node
+onValue(squadsRef, (snapshot) => {
+    const squadsData = snapshot.val();
+    updateSquadCounts(squadsData);
+});
+        submitSquadBtn.addEventListener('click', async () => {
+            const selectedSquad = squadSelect.value;
+            const gameName = gameNameInput.value;
 
-                    if (gameName && selectedSquad) {
-                        const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
-                        const userSquadSnapshot = await get(child(userSquadRef, 'selectedSquad'));
+            if (gameName && selectedSquad) {
+                const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
+                const userSquadSnapshot = await get(userSquadRef);
 
-                        if (userSquadSnapshot.exists()) {
-                            alert("You have already submitted a squad selection.");
-                        } else {
-                            set(ref(realtimeDb, `userSquads/${user.uid}/selectedSquad`), selectedSquad);
-                            set(ref(realtimeDb, `userSquads/${user.uid}/gameName`), gameName);
-                            alert("Squad selection submitted successfully!");
-                            squadSelect.disabled = true;
-                            submitSquadBtn.disabled = true;
-                            gameNameInput.disabled = true;
-                            // Additional logic for limiting users in each squad and assigning administrators
-                            // Display real-time count of users in each squad
-                        }
+                if (userSquadSnapshot.exists()) {
+                    alert("You have already submitted a squad selection.");
+                } else {
+                    const squadsSnapshot = await get(squadsRef);
+                    const selectedSquadRef = child(squadsRef, selectedSquad);
+                    const selectedSquadSnapshot = await get(selectedSquadRef);
+                    
+                    if (selectedSquadSnapshot.exists() && selectedSquadSnapshot.val().members.length < 4) {
+                        set(child(selectedSquadRef, 'members/' + user.uid), gameName);
+                        set(userSquadRef, {
+                            selectedSquad: selectedSquad,
+                            gameName: gameName,
+                            isAdmin: selectedSquadSnapshot.val().members.length === 0 // Assign admin if the first member
+                        });
+                        alert("Squad selection submitted successfully!");
+                        squadSelect.disabled = true;
+                        submitSquadBtn.disabled = true;
+                        gameNameInput.disabled = true;
                     } else {
-                        alert("Please enter your game name and select a squad before submitting");
+                        alert("This squad is already full. Please select another squad.");
                     }
-                });
+                }
+            } else {
+                alert("Please enter your game name and select a squad before submitting");
             }
         });
+    }
+});
     </script>
 </body>
 
