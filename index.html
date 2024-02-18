@@ -26,16 +26,13 @@
   <h1>Welcome, <span id="userName"></span></h1>
   <p>Email: <span id="userEmail"></span></p>
   <img id="userProfilePicture" src="" alt="Profile Picture">
-  <div id="squadButtons">
-    <button id="squad1" class="squadButton">Join Squad 1</button>
-    <button id="squad2" class="squadButton">Join Squad 2</button>
-    <button id="squad3" class="squadButton">Join Squad 3</button>
-    <button id="squad4" class="squadButton">Join Squad 4</button>
+   <div>
+    <button id="squad1">Join Squad 1</button>
+    <button id="squad2">Join Squad 2</button>
+    <button id="squad3">Join Squad 3</button>
+    <button id="squad4">Join Squad 4</button>
   </div>
-  <div id="customPopup" class="popup">
-    <span class="close" onclick="closePopup()">&times;</span>
-    <p>Thank you for joining a squad!</p>
-  </div>
+  <div id="customPopup" style="display: none;"></div>
 <script defer type="module">
  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
