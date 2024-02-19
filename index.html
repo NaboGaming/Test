@@ -41,56 +41,60 @@
         };
         // Firebase configuration remains unchanged
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const realtimeDb = getDatabase(app);
+   
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const realtimeDb = getDatabase(app);
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                document.getElementById("userName").textContent = user.displayName;
-                document.getElementById("userEmail").textContent = user.email;
-                document.getElementById("userProfilePicture").src = user.photoURL;
+// Authentication state change listener
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    document.getElementById("userName").textContent = user.displayName;
+    document.getElementById("userEmail").textContent = user.email;
+    document.getElementById("userProfilePicture").src = user.photoURL;
 
-                const squadButtons = document.querySelectorAll('.squadBtn');
-                const submitBtn = document.getElementById('submitSelection');
-                let selectedSquad = '';
+    const squadButtons = document.querySelectorAll('.squadBtn');
+    const submitBtn = document.getElementById('submitSelection');
+    let selectedSquad = '';
 
-                squadButtons.forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        selectedSquad = btn.id;
-                        squadButtons.forEach((b) => {
-                            if (b.id !== selectedSquad) {
-                                b.disabled = true;
-                            }
-                        });
-                    });
-                });
-
-                submitBtn.addEventListener('click', async () => {
-                    const gameName = document.getElementById('gameName').value;
-                    const gameId = document.getElementById('gameId').value;
-
-                    if (gameName && gameId && selectedSquad) {
-                        const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
-                        const userSquadSnapshot = await get(child(userSquadRef, 'selectedSquad'));
-
-                        if (userSquadSnapshot.exists()) {
-                            alert("You have already submitted a squad selection.");
-                        } else {
-                            set(ref(realtimeDb, `userSquads/${user.uid}/selectedSquad`), selectedSquad);
-                            alert("Squad selection submitted successfully!");
-                            
-                            // Redirect to a new page after successful submission
-                            window.location.href = 'newPage.html'; // Replace 'newPage.html' with the desired target page
-                        }
-                    } else {
-                        alert("Please enter game name, game ID, and select a squad before submitting");
-                    }
-                });
-            } else {
-                // Handle when user is not authenticated
-            }
+    // Add event listeners to squad buttons and submit button
+    squadButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            selectedSquad = btn.id;
+            squadButtons.forEach((b) => {
+                if (b.id !== selectedSquad) {
+                    b.disabled = true;
+                }
+            });
         });
+    });
+
+    submitBtn.addEventListener('click', async () => {
+        if (selectedSquad) {
+            const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
+
+            // Check if user has already submitted
+            const userSquadSnapshot = await get(child(userSquadRef, 'selectedSquad'));
+            if (userSquadSnapshot.exists()) {
+                alert("You have already submitted a squad selection.");
+            } else {
+                update(realtimeDb.ref(`userSquads/${user.uid}`), {
+                    selectedSquad: selectedSquad
+                });
+                alert("Squad selection submitted successfully!");
+
+                // Redirect to a new page after successful submission
+                window.location.href = 'newPage.html'; // Replace 'newPage.html' with the desired target page
+            }
+        } else {
+            alert("Please select a squad before submitting");
+        }
+    });
+  } else {
+    // Handle when user is not authenticated
+  }
+});
     </script>
 </body>
 </html>
