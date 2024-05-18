@@ -1,101 +1,107 @@
-
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard</title>
+<meta charset="utf-8">
+<title>Number verification with OTP</title>
+<style>
+	.container {
+		width: 302px;
+		height: 175px;
+		position: absolute;
+		left: 0px;
+		right: 0px;
+		top: 0px;
+		bottom: 0px;
+		margin: auto;
+	}
+	#number, #verificationcode {
+		width: calc(100% - 24px);
+		padding: 10px;
+		font-size: 20px;
+		margin-bottom: 5px;
+		outline: none;
+	}
+	#recaptcha-container {
+		margin-bottom: 5px;
+	}
+	#send, #verify {
+		width: 100%;
+		height: 40px;
+		outline: none;
+	}
+	.p-conf, .n-conf {
+		width: calc(100% - 22px);
+		border: 2px solid green;
+		border-radius: 4px;
+		padding: 8px 10px;
+		margin: 4px 0px;
+		background-color: rgba(0, 249, 12, 0.5);
+		display: none;
+	}
+	.n-conf {
+		border-color: red;
+		background-color: rgba(255, 0, 4, 0.5);
+	}
+</style>
 </head>
+
 <body>
-  <h1>Welcome, <span id="userName"></span>!</h1>
-  <p>Email: <span id="userEmail"></span></p>
-  <img id="userProfilePicture" width="100" height="100" alt="Profile Picture">
-
-  <h2>Game Selection</h2>
-  <label for="gameName">Game Name:</label>
-  <input type="text" id="gameName">
-  <label for="gameID">Game ID:</label>
-  <input type="text" id="gameID">
-  <label for="phoneNumber">Phone Number:</label>
-  <input type="text" id="phoneNumber">
-  <div>
-    <button class="squadBtn" id="squad1">Select Squad 1</button>
-    <button class="squadBtn" id="squad2">Select Squad 2</button>
-    <!-- Add more squad buttons as needed -->
-  </div>
-
-  <h1>Your Selection</h1>
-  <p>Game Name: <span id="gameNameDisplay"></span></p>
-  <p>Game ID: <span id="gameIDDisplay"></span></p>
-  <p>Phone Number: <span id="phoneNumberDisplay"></span></p>
-
- <script defer type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
-  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
-
-  const firebaseConfig = {
-    // Your Firebase config
-apiKey: "AIzaSyC_VKdV-KsIzUiOb7jFLsYXdTsuGkLiS-Q",authDomain: "register-71bde.firebaseapp.com",projectId: "register-71bde",storageBucket: "register-71bde.appspot.com",messagingSenderId: "412548441298",appId: "1:412548441298:web:e0fb2b6c5fbd4af7d0b90b"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const realtimeDb = getDatabase(app);
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      document.getElementById("userName").textContent = user.displayName;
-      document.getElementById("userEmail").textContent = user.email;
-      document.getElementById("userProfilePicture").src = user.photoURL;
-
-      const squadBtns = document.querySelectorAll(".squadBtn");
-      squadBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const gameName = document.getElementById("gameName").value;
-          const gameID = document.getElementById("gameID").value;
-          const phoneNumber = document.getElementById("phoneNumber").value; // Add phone number input
-
-          if (gameName && gameID && phoneNumber) {
-            const selectedSquad = btn.id;
-            const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
-            const userSquadSnapshot = await get(child(userSquadRef, 'selectedSquad'));
-
-            if (userSquadSnapshot.exists()) {
-              alert("You have already submitted a squad selection.");
-            } else {
-              set(ref(realtimeDb, `userSquads/${user.uid}/gameName`), gameName);
-              set(ref(realtimeDb, `userSquads/${user.uid}/gameID`), gameID);
-              set(ref(realtimeDb, `userSquads/${user.uid}/phoneNumber`), phoneNumber); // Store phone number
-              set(ref(realtimeDb, `userSquads/${user.uid}/selectedSquad`), selectedSquad);
-              alert("Squad selection submitted successfully!");
-              window.location.href = "https://nabogaming.github.io/Nyumbani/";
-            }
-          } else {
-            alert("Please enter game name, game ID, and phone number before selecting a squad.");
-          }
-        });
-      });
-
-      const userSquadRef = ref(realtimeDb, `userSquads/${user.uid}`);
-      const userSquadSnapshot = await get(userSquadRef);
-
-      if (userSquadSnapshot.exists()) {
-        // Fetch and display game name, game ID, and phone number on user's dashboard
-        const gameNameDisplay = userSquadSnapshot.val().gameName;
-        const gameIDDisplay = userSquadSnapshot.val().gameID;
-        const phoneNumberDisplay = userSquadSnapshot.val().phoneNumber;
-
-        document.getElementById("gameNameDisplay").textContent = gameNameDisplay;
-        document.getElementById("gameIDDisplay").textContent = gameIDDisplay;
-        document.getElementById("phoneNumberDisplay").textContent = phoneNumberDisplay;
-        
-        window.location.href = "https://nabogaming.github.io/Nyumbani/";
-      }
-    } else {
-      // Handle if user is not authenticated
-    }
-  });
+	<div class="container">
+		<div id="sender">
+			<input type="text" id="number" placeholder="+923...">
+			<div id="recaptcha-container"></div>
+			<input type="button" id="send" value="Send" onClick="phoneAuth()">
+		</div>
+		<div id="verifier" style="display: none">
+			<input type="text" id="verificationcode" placeholder="OTP Code">
+			<input type="button" id="verify" value="Verify" onClick="codeverify()">
+			<div class="p-conf">Number Verified</div>
+			<div class="n-conf">OTP ERROR</div>
+		</div>
+	</div>
+<!--	add firebase SDK-->
+<script src="https://www.gstatic.com/firebasejs/9.12.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.12.1/firebase-auth-compat.js"></script>
+<script>
+	// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyC3MIN64hy_oTQfQWUHl0lID-CJkIfci0M",
+  authDomain: "yt-project-a29f8.firebaseapp.com",
+  projectId: "yt-project-a29f8",
+  storageBucket: "yt-project-a29f8.appspot.com",
+  messagingSenderId: "159898773748",
+  appId: "1:159898773748:web:2985334de4f06ff73356a1",
+  measurementId: "G-DLWR9M5SJC"
+};
+	firebase.initializeApp(firebaseConfig);
+render();
+function render(){
+	window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
+	recaptchaVerifier.render();
+}
+	// function for send message
+function phoneAuth(){
+	var number = document.getElementById('number').value;
+	firebase.auth().signInWithPhoneNumber(number, window.recaptchaVerifier).then(function(confirmationResult){
+		window.confirmationResult = confirmationResult;
+		coderesult = confirmationResult;
+		document.getElementById('sender').style.display = 'none';
+		document.getElementById('verifier').style.display = 'block';
+	}).catch(function(error){
+		alert(error.message);
+	});
+}
+	// function for code verify
+function codeverify(){
+	var code = document.getElementById('verificationcode').value;
+	coderesult.confirm(code).then(function(){
+		document.getElementsByClassName('p-conf')[0].style.display = 'block';
+		document.getElementsByClassName('n-conf')[0].style.display = 'none';
+	}).catch(function(){
+		document.getElementsByClassName('p-conf')[0].style.display = 'none';
+		document.getElementsByClassName('n-conf')[0].style.display = 'block';
+	})
+}
 </script>
 </body>
 </html>
